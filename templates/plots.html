@@ -2,5 +2,9 @@
 
 {% block content %}
 {{ super() }}
-<div>SomeThing</div>
+{{ pics | safe }}
+<br>
+<center>
+    {{ table | safe }}
+</center>
 {% endblock %}

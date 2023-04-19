@@ -43,3 +43,20 @@ form button:hover {
   font-size: 14px;
   margin-top: 10px;
 }
+
+.dataframe_style {
+    font-size: 10pt;
+    text-align: center;
+    font-family: Arial;
+    border-collapse: collapse;
+    border: 1px solid silver;
+}
+
+.dataframe_style tr:nth-child(even) {
+    background: #E0E0E0;
+}
+
+.dataframe_style tr:hover {
+    background: silver;
+    cursor: pointer;
+}

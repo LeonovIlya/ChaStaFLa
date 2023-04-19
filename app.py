@@ -1,16 +1,27 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+import os
+from flask import Flask, flash, render_template, request, redirect, url_for, \
+    session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+
+from excel_data.data_analysis import create_dirs, get_all_plots, \
+    get_images_for_html, get_table_for_markets
+
+UPLOAD_FOLDER = './excel_data/files'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = \
     'postgresql+psycopg2://postgres:postgres@localhost:5432/postgres'
 app.config['SECRET_KEY'] = 'SuPeR-puper-duper-secret-Key-value-+_)(*&^%$#@!'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+create_dirs()
+get_all_plots()
 
 
 class User(db.Model):
@@ -90,7 +101,74 @@ def register():
 def dashboard():
     if 'user_id' in session:
         user = User.query.filter_by(id=session['user_id']).first()
-        return render_template('dashboard.html', user=user)
+        return render_template('dashboard.html', user=user.username)
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route('/markets')
+def markets():
+    if 'user_id' in session:
+        pics = get_images_for_html('markets')
+        try:
+            table = get_table_for_markets(file_name='P04_Stats.xlsx',
+                                          sheet_name='Сети')
+        except FileNotFoundError as error:
+            table = '\nФайл c данными не найден! (%s)' % error
+        return render_template('plots.html', pics=pics, table=table)
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route('/cm')
+def cm():
+    if 'user_id' in session:
+        pics = get_images_for_html('cm')
+        return render_template('plots.html', pics=pics)
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route('/kas')
+def kas():
+    pass
+
+
+@app.route('/mr')
+def mr():
+    pass
+
+
+@app.route('/upload')
+def upload():
+    if 'user_id' in session:
+        return render_template('upload.html')
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route('/uploader', methods=['POST', 'GET'])
+def uploader():
+    if 'user_id' in session:
+        if request.method == 'POST':
+            file = request.files['file']
+            if file:
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                flash('Файл успешно загружен!')
+                return redirect(url_for('upload', name=filename))
+            else:
+                flash('Ошибка!')
+                return redirect(url_for('upload'))
+
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route('/profile')
+def profile():
+    if 'user_id' in session:
+        pass
     else:
         return redirect(url_for('login'))
 

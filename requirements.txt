@@ -1,0 +1,9 @@
+Flask~=2.2.3
+SQLAlchemy~=2.0.9
+Werkzeug~=2.2.3
+alembic~=1.10.3
+flask_sqlalchemy
+flask_migrate
+pandas~=2.0.0
+openpyxl
+matplotlib
