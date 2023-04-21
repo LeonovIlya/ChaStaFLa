@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask, flash, render_template, request, redirect, url_for, \
     session
 from flask_sqlalchemy import SQLAlchemy
@@ -9,27 +10,35 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 from excel_data.data_analysis import create_dirs, get_all_plots, \
-    get_images_for_html, get_table_for_markets
+    get_images_for_html, get_table_for_markets, get_mr_list, get_mr_plots
 
-UPLOAD_FOLDER = './excel_data/files'
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = \
     'postgresql+psycopg2://postgres:postgres@localhost:5432/postgres'
 app.config['SECRET_KEY'] = 'SuPeR-puper-duper-secret-Key-value-+_)(*&^%$#@!'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = './excel_data/files'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-create_dirs()
-get_all_plots()
+# create_dirs()
+# get_all_plots()
 
 
+# create class for users
 class User(db.Model):
     __tablename__ = 'users_for_test'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    id = db.Column(db.Integer,
+                   primary_key=True)
+    username = db.Column(db.String(80),
+                         unique=True,
+                         nullable=False)
+    email = db.Column(db.String(100),
+                      unique=True,
+                      nullable=False)
+    password = db.Column(db.String(120),
+                         nullable=False)
 
     def __init__(self, username, email, password):
         self.username = username
@@ -40,6 +49,7 @@ class User(db.Model):
         return check_password_hash(self.password, password)
 
 
+# route for index page
 @app.route('/index.html')
 @app.route('/')
 def index():
@@ -49,6 +59,7 @@ def index():
         return render_template('login.html')
 
 
+# route for login page
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
@@ -59,6 +70,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_id'] = user.id
+            session['username'] = user.username
             return redirect(url_for('dashboard'))
         else:
             return render_template('login.html',
@@ -67,6 +79,7 @@ def login():
         return render_template('login.html')
 
 
+# route for register page
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if 'user_id' in session:
@@ -97,48 +110,86 @@ def register():
             return render_template('register.html')
 
 
+# route for dashboard page
 @app.route('/dashboard')
 def dashboard():
+    print(session.values())
     if 'user_id' in session:
         user = User.query.filter_by(id=session['user_id']).first()
-        return render_template('dashboard.html', user=user.username)
+        return render_template('dashboard.html',
+                               user=user)
     else:
         return redirect(url_for('login'))
 
 
+# route for markets page
 @app.route('/markets')
 def markets():
     if 'user_id' in session:
         pics = get_images_for_html('markets')
+        pics_group = get_images_for_html('markets_group')
         try:
             table = get_table_for_markets(file_name='P04_Stats.xlsx',
                                           sheet_name='Сети')
         except FileNotFoundError as error:
             table = '\nФайл c данными не найден! (%s)' % error
-        return render_template('plots.html', pics=pics, table=table)
+        return render_template('plots.html',
+                               pics=pics,
+                               pics_group=pics_group,
+                               table=table)
     else:
         return redirect(url_for('login'))
 
 
+# route for cm page
 @app.route('/cm')
 def cm():
     if 'user_id' in session:
         pics = get_images_for_html('cm')
-        return render_template('plots.html', pics=pics)
+        return render_template('plots.html',
+                               pics=pics)
     else:
         return redirect(url_for('login'))
 
 
+# route for kas page
 @app.route('/kas')
 def kas():
-    pass
+    if 'user_id' in session:
+        pics = get_images_for_html('kas')
+        return render_template('plots.html',
+                               pics=pics)
+    else:
+        return redirect(url_for('login'))
 
 
-@app.route('/mr')
+# route for mr page
+@app.route('/mr', methods=['GET', 'POST'])
 def mr():
-    pass
+    if 'user_id' in session:
+        mr_list = get_mr_list(file_name='P04_Stats.xlsx',
+                              sheet_name='MR')
+        pics = get_images_for_html('mr')
+        if request.method == 'GET':
+            return render_template('mr.html',
+                                   mr_list=mr_list,
+                                   pics=pics)
+        if request.method == 'POST':
+            mr_value = request.form.get('mr_value')
+            if mr_value:
+                get_mr_plots(mr_value)
+                return render_template('mr.html',
+                                       mr_list=mr_list,
+                                       pics=pics,
+                                       mr_value=mr_value)
+            else:
+                flash('Ошибка!')
+                return redirect(url_for('mr'))
+    else:
+        return redirect(url_for('login'))
 
 
+# route for upload page
 @app.route('/upload')
 def upload():
     if 'user_id' in session:
@@ -147,6 +198,7 @@ def upload():
         return redirect(url_for('login'))
 
 
+# route for uploader
 @app.route('/uploader', methods=['POST', 'GET'])
 def uploader():
     if 'user_id' in session:
@@ -156,7 +208,8 @@ def uploader():
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 flash('Файл успешно загружен!')
-                return redirect(url_for('upload', name=filename))
+                return redirect(url_for('upload',
+                                        name=filename))
             else:
                 flash('Ошибка!')
                 return redirect(url_for('upload'))
@@ -165,24 +218,29 @@ def uploader():
         return redirect(url_for('login'))
 
 
+# route for profile page
 @app.route('/profile')
 def profile():
     if 'user_id' in session:
-        pass
+        user = User.query.filter_by(id=session['user_id']).first()
+        return render_template('profile.html',
+                               user=user)
     else:
         return redirect(url_for('login'))
 
 
+# route for logout
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
 
 
+# route for 404 page
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('page_not_found.html'), 404
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{{ super() }}
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      {{ message }}
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+<p>Выберите мерчендайзера:</p>
+<p>
+<form action="{{url_for('mr')}}" method="post">
+    <p>
+        <select name="mr_value">
+            {% for i in mr_list %}
+                {% if i == mr_value %}
+                    <option selected="selected">{{ i }}</option>
+                {% else %}
+                    <option>{{ i }}</option>
+                {%endif%}
+            {% endfor %}
+        </select>
+
+    </p>
+    <p>
+        <input type="submit" value="Отправить">
+    </p>
+</form>
+</p>
+<p>
+    {{ pics | safe }}
+</p>
+{% endblock %}

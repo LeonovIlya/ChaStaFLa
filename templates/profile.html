@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{{ super() }}
+<p>ПРОФИЛЬ</p>
+<p>Ваш id: {{ user.id }}</p>
+<p>Ваш username: {{ user.username }}</p>
+<p>Ваш email: {{ user.email }}</p>
+{% endblock %}

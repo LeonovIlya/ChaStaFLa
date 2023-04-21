@@ -16,7 +16,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('profile') }}">👤 {{ user }}</a>
+                    <a class="nav-link" href="{{ url_for('profile') }}">👤 {{ session.username }}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('logout') }}">Выход</a>

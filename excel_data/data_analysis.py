@@ -1,24 +1,32 @@
+import matplotlib
+matplotlib.use('Agg') # fix matplotlib error with loop
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
+
 # path to folder with plots
 path_to_plots = './static/plots/'
 
-category = ['markets', 'cm', 'kas', 'mr']
+category = ['markets', 'markets_group', 'cm', 'kas', 'mr']
 
-# markets columns and rows in markets_sheet
-market_columns = ['Visits', 'PSS', 'Osa', 'Ттask']
+# columns and rows for plots
+markets_columns = ['Visits', 'PSS', 'Osa', 'Ттask']
 
 markets_rows = ['Auchan', 'Dixy', 'Lenta HM', 'Lenta SM', 'Magnit HM',
                 'Magnit MK', 'Magnit MM', 'Metro', 'Okey', 'Perekrestok ',
                 'Pyaterochka', 'Верный', 'Гиперглобус', 'Магнолия', 'Ярче']
 
+markets_group_rows = ['Гипермаркеты', 'Магазины у дома', 'Супермаркеты']
+
 cm_columns = ['% coverage', '% visits', 'PSS %', ' OSA %']
-cm_rows = ['Ушакова Наталья', 'Клабукова Виктория']
+
+kas_mr_columns = ['% coverage', '% visits', 'PSS %', 'ср OSA %',
+                  '% tactical task']
 
 
+# create dirs for plot pictures
 def create_dirs():
     for i in category:
         if not os.path.exists(f'./static/plots/{i}'):
@@ -46,17 +54,22 @@ def open_excel_file(file_name, sheet_name):
 
 
 # get plot in png
-def get_plot(file_name, sheet_name, sheet, index_name, rows, columns):
+def get_plot(file_name, sheet_name, column_replace, sheet, index_name,
+             output_file_name, rows, columns, left, rows_list):
     df = open_excel_file(file_name, sheet_name)
-    df.rename(columns={'Названия строк': sheet_name},
+    df.rename(columns={column_replace: sheet_name},
               inplace=True)
     df.set_index(sheet_name, inplace=True)
-    df = df.loc[rows, columns]
+    if rows_list:
+        df = df.loc[rows, columns]
+    else:
+        df = df.loc[df.index.values, columns]
+    ax = plt.figure()
     ax = df.plot(y=index_name,
                  kind='barh',
                  title=index_name,
                  legend=False,
-                 xlim=(0.6, 1.2),
+                 xlim=(0.5, 1.3),
                  color='blue')
     ax.axvline(1,
                color='red',
@@ -64,9 +77,11 @@ def get_plot(file_name, sheet_name, sheet, index_name, rows, columns):
     ax.xaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
     ax.bar_label(ax.containers[0],
                  fmt=lambda x: '{:.2f}%'.format(x * 100))
-    plt.subplots_adjust(left=0.3)
+    plt.subplots_adjust(left=left)
+    plt.gca().invert_yaxis()
     fig = ax.get_figure()
-    fig.savefig(f'./static/plots/{sheet}/{index_name}.png')
+    fig.savefig(f'./static/plots/{sheet}/{output_file_name}.png')
+    plt.close('all')
 
 
 # get table in html format
@@ -76,33 +91,90 @@ def get_table_for_markets(file_name, sheet_name):
               inplace=True)
     df.set_index(sheet_name,
                  inplace=True)
-    df = df.loc[markets_rows, market_columns]
+    df = df.loc[markets_rows, markets_columns]
     df_styled = df.style.applymap(color_total_columns,
-                                  subset=market_columns)
+                                  subset=markets_columns)
     df_styled\
-        .format('{:,.2%}'.format, subset=market_columns)\
+        .format('{:,.2%}'.format, subset=markets_columns)\
         .set_properties(**{'border': '1px solid black; font-size:100%'})
     table_markets = df_styled.to_html(justify="center")
     return table_markets
 
 
-# gen pngs for all total columns
-def get_plots(filename, sheet_name, sheet, rows, columns):
+# get list of MR's for html selection
+def get_mr_list(file_name, sheet_name):
+    df = open_excel_file(file_name, sheet_name)
+    df.set_index('МЕ', inplace=True)
+    return sorted(list(df.index.values))
+
+
+# get plots for all columns
+def get_plots(file_name, sheet_name, column_replace, sheet, rows, columns,
+              left, rows_list):
     for i in columns:
-        get_plot(file_name=filename,
+        get_plot(file_name=file_name,
                  sheet_name=sheet_name,
+                 column_replace=column_replace,
                  sheet=sheet,
+                 index_name=i,
+                 output_file_name=i,
                  rows=rows,
                  columns=columns,
-                 index_name=i)
+                 left=left,
+                 rows_list=rows_list)
 
 
+# get all plots
 def get_all_plots():
-    get_plots('P04_Stats.xlsx', 'Сети', 'markets', markets_rows,
-              market_columns)
-    get_plots('P04_Stats.xlsx', 'Сити', 'cm', cm_rows, cm_columns)
+    get_plots(file_name='P04_Stats.xlsx',
+              sheet_name='Сети',
+              column_replace='Названия строк',
+              sheet='markets',
+              rows=markets_rows,
+              columns=markets_columns,
+              left=0.3,
+              rows_list=True)
+    get_plots(file_name='P04_Stats.xlsx',
+              sheet_name='Группы',
+              column_replace='Названия строк',
+              sheet='markets_group',
+              rows=markets_group_rows,
+              columns=markets_columns,
+              left=0.3,
+              rows_list=True)
+    get_plots(file_name='P04_Stats.xlsx',
+              sheet_name='Сити',
+              column_replace='Названия строк',
+              sheet='cm',
+              rows=None,
+              columns=cm_columns,
+              left=0.3,
+              rows_list=False)
+    get_plots(file_name='P04_Stats.xlsx',
+              sheet_name='KAS',
+              column_replace='КАС',
+              sheet='kas',
+              rows=None,
+              columns=kas_mr_columns,
+              left=0.5,
+              rows_list=False)
 
 
+# get plot for specific MR
+def get_mr_plots(mr_value):
+    return get_plot(file_name='P04_Stats.xlsx',
+                    sheet_name='MR',
+                    column_replace='МЕ',
+                    sheet='mr',
+                    index_name=mr_value,
+                    output_file_name='image',
+                    rows=mr_value,
+                    columns=kas_mr_columns,
+                    left=0.2,
+                    rows_list=True)
+
+
+# get html code of plot pictures
 def get_images_for_html(page):
     filenames = [f for f in os.listdir(f'{path_to_plots}/{page}')
                  if os.path.isfile(os.path.join(f'{path_to_plots}/{page}', f))]
