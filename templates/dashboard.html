@@ -2,5 +2,59 @@
 
 {% block content %}
 {{ super() }}
-<div>SomeThing</div>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      {{ message }}
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<div class="page-header">
+  <h4>Текущий файл, выбранный для подсчета статистики:</h4>
+</div>
+<div class="w-auto p-3">
+  {% if file_name is not none %}
+    <p style="color:blue;font-size:20px;">{{ file_name }}</p>
+  {% else %}
+    <p style="color:red;font-size:20px;">Файл не выбран! Выберите файл ниже!</p>
+  {% endif %}
+</div>
+<form action="{{ url_for('uploader') }}" method="post" enctype="multipart/form-data">
+  <div class="input-group">
+    <input type="file" class="form-control" id="inputGroupFile04" name="file" aria-describedby="inputGroupFileAddon04" aria-label="Upload">
+    <button type="submit" class="btn btn-primary" id="inputGroupFileAddon04">Загрузить</button>
+  </div>
+</form>
+<br>
+<div class="page-header">
+  <h4>Загруженные файлы на сервер:</h4>
+</div>
+<div class="w-auto p-3">
+  <ul class="list-group">
+    {% for i in file_list %}
+    <li class="list-group-item">{{ i }}</li>
+    {% endfor %}
+  </ul>
+</div>
+<br>
+<div class="page-header">
+  <h4>Выберите файл для подсчета статистики:</h4>
+</div>
+<form action="{{url_for('get_counts')}}" method="post">
+  <div class="form-group">
+    <p>
+      <select name="file_name" class="form-select">
+        {% for i in file_list %}
+          <option>{{ i }}</option>
+        {% endfor %}
+      </select>
+    </p>
+  </div>
+  <p>
+    <button type="submit" class="btn btn-primary">Выбрать</button>
+  </p>
+</form>
 {% endblock %}

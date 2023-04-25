@@ -1,9 +1,17 @@
 {% extends 'base.html' %}
-
 {% block content %}
 {{ super() }}
-{{ pics | safe }}
-{{ pics_group | safe }}
+<div class="media">
+    <div class="media-body">
+        {{ pics | safe }}
+    </div>
+</div>
+<br>
+<div class="media">
+    <div class="media-body">
+        {{ pics_group | safe }}
+    </div>
+</div>
 <br>
 <center>
     {{ table | safe }}

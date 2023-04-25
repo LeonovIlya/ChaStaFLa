@@ -11,27 +11,36 @@
     </ul>
   {% endif %}
 {% endwith %}
-<p>Выберите мерчендайзера:</p>
-<p>
-<form action="{{url_for('mr')}}" method="post">
-    <p>
-        <select name="mr_value">
-            {% for i in mr_list %}
-                {% if i == mr_value %}
-                    <option selected="selected">{{ i }}</option>
-                {% else %}
-                    <option>{{ i }}</option>
-                {%endif%}
-            {% endfor %}
-        </select>
-
-    </p>
-    <p>
-        <input type="submit" value="Отправить">
-    </p>
-</form>
-</p>
-<p>
-    {{ pics | safe }}
-</p>
+<div class="card">
+    <div class="page-header">
+        <h4>Выберите мерчендайзера:</h4>
+    </div>
+    <form action="{{url_for('mr')}}" method="post">
+        <div class="form-group">
+            <p>
+                <select name="mr_value" class="form-select">
+                    {% for i in mr_list %}
+                        {% if i == mr_value %}
+                            <option selected="selected">{{ i }}</option>
+                        {% else %}
+                            <option>{{ i }}</option>
+                        {%endif%}
+                    {% endfor %}
+                </select>
+            </p>
+        </div>
+        <p>
+            <button type="submit" class="btn btn-primary">Выбрать</button>
+        </p>
+    </form>
+</div>
+<div class="media">
+    <div class="media-body">
+        {% if pics is not none %}
+            {{ pics | safe }}
+        {% else %}
+            <p style="color:red;font-size:20px;">Не выбран файл для статистики!</p>
+            {% endif %}
+    </div>
+</div>
 {% endblock %}
