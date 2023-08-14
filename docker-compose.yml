@@ -1,0 +1,26 @@
+services:
+  pgdb:
+    image: postgres:latest
+    container_name: postgres-container
+    restart: always
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+
+  flask_web:
+    container_name: flask-container
+    build: .
+    ports:
+      - '5000:5000'
+    restart: on-failure
+    depends_on:
+      pgdb:
+        condition: service_healthy
+
+volumes:
+  postgresql_data:

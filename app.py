@@ -17,7 +17,7 @@ log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = \
-    'postgresql+psycopg2://postgres:postgres@localhost:5432/postgres'
+    'postgresql+psycopg2://postgres:postgres@pgdb:5432/postgres'
 app.config['SECRET_KEY'] = 'SuPeR-puper-duper-secret-Key-value-+_)(*&^%$#@!'
 app.config['UPLOAD_FOLDER'] = './excel_data/files'
 
@@ -28,7 +28,7 @@ create_dirs()
 
 # class for users
 class User(db.Model):
-    __tablename__ = 'users_for_test'
+    __tablename__ = 'users'
     id = db.Column(db.Integer,
                    primary_key=True)
     username = db.Column(db.String(80),
@@ -71,11 +71,10 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             return redirect(url_for('dashboard'))
-        else:
-            return render_template('login.html',
-                                   error='Invalid username or password')
-    else:
-        return render_template('login.html')
+
+        return render_template('login.html',
+                               error='Invalid username or password')
+    return render_template('login.html')
 
 
 # route for register page
@@ -83,29 +82,28 @@ def login():
 def register():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
-    else:
-        if request.method == 'POST':
-            username = request.form['username']
-            email = request.form['email']
-            password = request.form['password']
-            confirm_password = request.form['confirm_password']
-            if password != confirm_password:
-                return render_template('register.html',
-                                       error='Passwords do not match')
-            username_check = User.query.filter_by(username=username).first()
-            if username_check:
-                return render_template('register.html',
-                                       error='Username already taken!')
-            email_check = User.query.filter_by(email=email).first()
-            if email_check:
-                return render_template('register.html',
-                                       error='E-mail already taken!')
-            new_user = User(username, email, password)
-            db.session.add(new_user)
-            db.session.commit()
-            session['user_id'] = new_user.id
-            return redirect(url_for('dashboard'))
-        return render_template('register.html')
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        if password != confirm_password:
+            return render_template('register.html',
+                                   error='Passwords do not match')
+        username_check = User.query.filter_by(username=username).first()
+        if username_check:
+            return render_template('register.html',
+                                   error='Username already taken!')
+        email_check = User.query.filter_by(email=email).first()
+        if email_check:
+            return render_template('register.html',
+                                   error='E-mail already taken!')
+        new_user = User(username, email, password)
+        db.session.add(new_user)
+        db.session.commit()
+        session['user_id'] = new_user.id
+        return redirect(url_for('dashboard'))
+    return render_template('register.html')
 
 
 # route for dashboard page
@@ -185,8 +183,7 @@ def mr():
 
                 flash('Ошибка!')
                 return redirect(url_for('mr'))
-        else:
-            return render_template('mr.html',
+        return render_template('mr.html',
                                    pics=None)
     return redirect(url_for('login'))
 
@@ -246,13 +243,13 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
-
 # for https with ssl
-# context = (r"./certificate.pem", r"./key.pem")
+context = (r"./certificate.pem", r"./key.pem")
 
-# if __name__ == '__main__':
-#     app.run(debug=True,
-#             ssl_context=context)
+if __name__ == '__main__':
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+        #        ssl_context=context,
+        debug=False
+    )

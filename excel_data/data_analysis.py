@@ -1,13 +1,11 @@
-import matplotlib
-
-matplotlib.use('Agg')  # fix matplotlib error with loop
 import os
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
-
 from dataclasses import dataclass
 from typing import Optional, Union
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # fix matplotlib error with loop
+from matplotlib import pyplot as plt, ticker as mtick
+
 
 # path to folder with plots
 PATH_TO_PLOTS = './static/plots'
@@ -15,22 +13,22 @@ PATH_TO_PLOTS = './static/plots'
 # path to folder with Excel files
 PATH_TO_EXCEL_FILES = './excel_data/files'
 
-# category list
-category = ['markets', 'markets_group', 'cm', 'kas', 'mr']
+# category's
+category = ('markets', 'markets_group', 'cm', 'kas', 'mr')
 
 # columns and rows for plots
-markets_columns = ['Visits', 'PSS', 'Osa', 'Ттask']
+markets_columns = ('Visits', 'PSS', 'Osa', 'Ттask')
 
-markets_rows = ['Auchan', 'Dixy', 'Lenta HM', 'Lenta SM', 'Magnit HM',
+markets_rows = ('Auchan', 'Dixy', 'Lenta HM', 'Lenta SM', 'Magnit HM',
                 'Magnit MK', 'Magnit MM', 'Metro', 'Okey', 'Perekrestok ',
-                'Pyaterochka', 'Верный', 'Гиперглобус', 'Магнолия', 'Ярче']
+                'Pyaterochka', 'Верный', 'Гиперглобус', 'Магнолия', 'Ярче')
 
-markets_group_rows = ['Гипермаркеты', 'Магазины у дома', 'Супермаркеты']
+markets_group_rows = ('Гипермаркеты', 'Магазины у дома', 'Супермаркеты')
 
-cm_columns = ['% coverage', '% visits', 'PSS %', ' OSA %']
+cm_columns = ('% coverage', '% visits', 'PSS %', ' OSA %')
 
-kas_mr_columns = ['% coverage', '% visits', 'PSS %', 'ср OSA %',
-                  '% tactical task']
+kas_mr_columns = ('% coverage', '% visits', 'PSS %', 'ср OSA %',
+                  '% tactical task')
 
 # dataclass to current Excel file name
 @dataclass
@@ -48,7 +46,7 @@ def create_dirs() -> None:
             os.makedirs(f'{PATH_TO_PLOTS}/{i}')
 
 
-# change background color
+# change background color in table
 def color_total_columns(value: int) -> Optional[str]:
     if value >= 1.05:
         return 'background-color: Lime; font-weight:bold'
@@ -60,8 +58,7 @@ def color_total_columns(value: int) -> Optional[str]:
         return 'background-color: Brown; font-weight:bold'
     elif value <= 0.90:
         return 'background-color: Red; font-weight:bold'
-    else:
-        return None
+    return None
 
 
 # open Excel file and return dataframe
@@ -73,7 +70,7 @@ def open_excel_file(file_name: str, sheet_name: str) -> pd.DataFrame:
 # get plot in png
 def get_plot(file_name: str, sheet_name: str, column_replace: str, sheet: str,
              index_name: str, output_file_name: str,
-             rows: Optional[Union[str, list]], columns: list, left: float,
+             rows: Optional[Union[str, tuple]], columns: tuple, left: float,
              rows_list: bool) -> None:
     df = open_excel_file(file_name, sheet_name)
     df.rename(columns={column_replace: sheet_name},
@@ -129,7 +126,7 @@ def get_mr_list(file_name: str, sheet_name: str) -> list:
 
 # get plots for all columns
 def get_plots(file_name: str, sheet_name: str, column_replace: str, sheet: str,
-              rows: Optional[Union[str, list]], columns: list, left: float,
+              rows: Optional[Union[str, tuple]], columns: tuple, left: float,
               rows_list: bool) -> None:
     for i in columns:
         get_plot(file_name=file_name,
